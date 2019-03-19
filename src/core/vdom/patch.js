@@ -122,6 +122,9 @@ export function createPatchFunction (backend) {
 
   let creatingElmInVPre = 0
 
+  /**
+   * 通过虚拟节点创建真实的 DOM 并插入到它的父节点中
+   */
   function createElm (
     vnode,
     insertedVnodeQueue,
@@ -141,6 +144,9 @@ export function createPatchFunction (backend) {
     }
 
     vnode.isRootInsert = !nested // for transition enter check
+    /**
+     * createComponent 方法目的是尝试创建子组件
+     */
     if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
       return
     }
@@ -149,6 +155,8 @@ export function createPatchFunction (backend) {
     const children = vnode.children
     const tag = vnode.tag
     if (isDef(tag)) {
+      // 判断 vnode 是否包含 tag，如果包含，先简单对 tag 的合法性在非生产环境下做校验，看是否是一个合法标签；
+      // 然后再去调用平台 DOM 的操作去创建一个占位符元素。
       if (process.env.NODE_ENV !== 'production') {
         if (data && data.pre) {
           creatingElmInVPre++
@@ -180,11 +188,14 @@ export function createPatchFunction (backend) {
           }
           insert(parentElm, vnode.elm, refElm)
         }
+        // 创建子元素
         createChildren(vnode, children, insertedVnodeQueue)
         if (appendAsTree) {
           if (isDef(data)) {
+            // 执行所有的 create 的钩子并把 vnode push 到 insertedVnodeQueue 中
             invokeCreateHooks(vnode, insertedVnodeQueue)
           }
+          // 把 DOM 插入到父节点中，因为是递归调用，子元素会优先调用 insert，所以整个 vnode 树节点的插入顺序是先子后父
           insert(parentElm, vnode.elm, refElm)
         }
       } else {
@@ -269,6 +280,9 @@ export function createPatchFunction (backend) {
     insert(parentElm, vnode.elm, refElm)
   }
 
+  /**
+   * 调用一些 nodeOps 把子节点插入到父节点中
+   */
   function insert (parent, elm, ref) {
     if (isDef(parent)) {
       if (isDef(ref)) {
@@ -281,6 +295,11 @@ export function createPatchFunction (backend) {
     }
   }
 
+  /**
+   * createChildren 的逻辑很简单，实际上是遍历子虚拟节点，递归调用 createElm
+   * 这是一种常用的深度优先的遍历算法
+   * 这里要注意的一点是在遍历过程中会把 vnode.elm 作为父容器的 DOM 节点占位符传入
+   */
   function createChildren (vnode, children, insertedVnodeQueue) {
     if (Array.isArray(children)) {
       if (process.env.NODE_ENV !== 'production') {
@@ -697,6 +716,12 @@ export function createPatchFunction (backend) {
     }
   }
 
+  /**
+   * 它接收 4个参数，oldVnode 表示旧的 VNode 节点，它也可以不存在或者是一个 DOM 对象；
+   * vnode 表示执行 _render 后返回的 VNode 的节点；
+   * hydrating 表示是否是服务端渲染；
+   * removeOnly 是给 transition-group 用的
+   */
   return function patch (oldVnode, vnode, hydrating, removeOnly) {
     if (isUndef(vnode)) {
       if (isDef(oldVnode)) invokeDestroyHook(oldVnode)
@@ -740,6 +765,7 @@ export function createPatchFunction (backend) {
           }
           // either not server-rendered, or hydration failed.
           // create an empty node and replace it
+          // 将 oldVnode 转换成 VNode 对象
           oldVnode = emptyNodeAt(oldVnode)
         }
 

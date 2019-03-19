@@ -35,6 +35,7 @@ export function initMixin (Vue: Class<Component>) {
       // internal component options needs special treatment.
       initInternalComponent(vm, options)
     } else {
+      // 合并配置
       vm.$options = mergeOptions(
         resolveConstructorOptions(vm.constructor),
         options || {},
@@ -49,6 +50,7 @@ export function initMixin (Vue: Class<Component>) {
     }
     // expose real self
     vm._self = vm
+    // 初始化生命周期，事件中心，渲染...等等
     initLifecycle(vm)
     initEvents(vm)
     initRender(vm)
@@ -65,6 +67,8 @@ export function initMixin (Vue: Class<Component>) {
       measure(`vue ${vm._name} init`, startTag, endTag)
     }
 
+    // 如果有 el 属性，那么调用 vm.$mount 方法挂载 vm
+    // 挂载的目的就是把模板渲染成最终的 DOM
     if (vm.$options.el) {
       vm.$mount(vm.$options.el)
     }

@@ -166,6 +166,7 @@ export function mountComponent (
   }
   callHook(vm, 'beforeMount')
 
+  // updateComponent 作为实例化 watcher 之后的回调函数
   let updateComponent
   /* istanbul ignore if */
   if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
@@ -187,6 +188,7 @@ export function mountComponent (
     }
   } else {
     updateComponent = () => {
+      // 先调用 _render() 方法生成虚拟 Node，最终调用 _update() 方法更新 DOM
       vm._update(vm._render(), hydrating)
     }
   }
@@ -194,6 +196,7 @@ export function mountComponent (
   // we set this to vm._watcher inside the watcher's constructor
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
+  // 实例化一个 Watcher
   new Watcher(vm, updateComponent, noop, {
     before () {
       if (vm._isMounted && !vm._isDestroyed) {
@@ -206,6 +209,7 @@ export function mountComponent (
   // manually mounted instance, call mounted on self
   // mounted is called for render-created child components in its inserted hook
   if (vm.$vnode == null) {
+    // 设置为 true，表示已经挂载完成，进入 mounted 阶段
     vm._isMounted = true
     callHook(vm, 'mounted')
   }

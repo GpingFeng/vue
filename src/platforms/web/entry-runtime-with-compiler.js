@@ -30,7 +30,9 @@ Vue.prototype.$mount = function (
   }
 
   const options = this.$options
-  // resolve template/el and convert to render function
+  // 解析模板/el并转换为呈现函数
+  // 解析模板/ el并转换为渲染功能
+  // 如果没有定义 render 方法，则会把 el 或者 template 字符串转换成 render 方法
   if (!options.render) {
     let template = options.template
     if (template) {
@@ -83,8 +85,8 @@ Vue.prototype.$mount = function (
 }
 
 /**
- * Get outerHTML of elements, taking care
- * of SVG elements in IE as well.
+ * 获取外部HTML元素，注意
+ * IE中的SVG元素也是如此。
  */
 function getOuterHTML (el: Element): string {
   if (el.outerHTML) {

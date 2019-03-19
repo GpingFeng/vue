@@ -1,5 +1,7 @@
 /* @flow */
-
+/**
+ * 使用 Vnode 类进行描述虚拟节点
+ */
 export default class VNode {
   tag: string | void;
   data: VNodeData | void;
@@ -39,6 +41,9 @@ export default class VNode {
     componentOptions?: VNodeComponentOptions,
     asyncFactory?: Function
   ) {
+    // 标签名、数据、子节点、键值等
+    // 其它属性都是都是用来扩展 VNode 的灵活性以及实现一些特殊 feature 的
+    // 只用来映射到真实的 DOM 的渲染，不包括操作 DOM 的方法，因此它是非常轻量和简单的
     this.tag = tag
     this.data = data
     this.children = children

@@ -28,6 +28,8 @@ export function initRender (vm: Component) {
   // so that we get proper render context inside it.
   // args order: tag, data, children, normalizationType, alwaysNormalize
   // internal version is used by render functions compiled from templates
+  // 是被模板编译成的 render 函数使用，而 vm.$createElement 是用户手写 render 方法使用的， 
+  // 这俩个方法支持的参数相同，并且内部都调用了 createElement 方法。
   vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false)
   // normalization is always applied for the public version, used in
   // user-written render functions.
@@ -76,6 +78,8 @@ export function renderMixin (Vue: Class<Component>) {
     // render self
     let vnode
     try {
+      // render 函数中的第一个参数就是 createElement
+      // 返回一个 vnode，就是我们所说的虚拟节点
       vnode = render.call(vm._renderProxy, vm.$createElement)
     } catch (e) {
       handleError(e, vm, `render`)
@@ -93,11 +97,11 @@ export function renderMixin (Vue: Class<Component>) {
         vnode = vm._vnode
       }
     }
-    // if the returned array contains only a single node, allow it
+    // 如果返回的数组只包含一个节点，则允许它
     if (Array.isArray(vnode) && vnode.length === 1) {
       vnode = vnode[0]
     }
-    // return empty vnode in case the render function errored out
+    // 如果渲染函数出错，则返回空的vnode
     if (!(vnode instanceof VNode)) {
       if (process.env.NODE_ENV !== 'production' && Array.isArray(vnode)) {
         warn(
