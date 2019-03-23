@@ -34,6 +34,7 @@ function resetSchedulerState () {
 
 /**
  * Flush both queues and run the watchers.
+ * 冲洗两个队列并运行观察者。
  */
 function flushSchedulerQueue () {
   flushing = true
@@ -84,6 +85,7 @@ function flushSchedulerQueue () {
 
   // call component updated and activated hooks
   callActivatedHooks(activatedQueue)
+  // 获取到 updatedQueue updatedQueue 是更新后的 Watcher 数组
   callUpdatedHooks(updatedQueue)
 
   // devtool hook
@@ -98,6 +100,8 @@ function callUpdatedHooks (queue) {
   while (i--) {
     const watcher = queue[i]
     const vm = watcher.vm
+    // vm._watcher 是专门用来监听 vm 上的数据变化，然后重新渲染的
+    // 所以它是一个渲染相关的 watcher
     if (vm._watcher === watcher && vm._isMounted && !vm._isDestroyed) {
       callHook(vm, 'updated')
     }

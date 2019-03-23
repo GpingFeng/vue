@@ -124,6 +124,10 @@ export function createPatchFunction (backend) {
 
   /**
    * 通过虚拟节点创建真实的 DOM 并插入到它的父节点中
+   * 
+   * 这里我们传入的 vnode 是组件渲染的 vnode
+   * 也就是我们之前说的 vm._vnode，如果组件的根节点是个普通元素
+   * 那么 vm._vnode 也是普通的 vnode
    */
   function createElm (
     vnode,
@@ -146,6 +150,8 @@ export function createPatchFunction (backend) {
     vnode.isRootInsert = !nested // for transition enter check
     /**
      * createComponent 方法目的是尝试创建子组件
+     * 当条件为 false 
+     * 先创建一个父节点占位符，然后再遍历所有子 VNode 递归调用 createElm
      */
     if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
       return
@@ -221,6 +227,9 @@ export function createPatchFunction (backend) {
   function createComponent (vnode, insertedVnodeQueue, parentElm, refElm) {
     let i = vnode.data
     if (isDef(i)) {
+      /**
+       * 如果 vnode 是一个组件 VNode，那么条件会满足，并且得到 i 就是 init 钩子函数
+       */
       const isReactivated = isDef(vnode.componentInstance) && i.keepAlive
       if (isDef(i = i.hook) && isDef(i = i.init)) {
         i(vnode, false /* hydrating */)
@@ -231,6 +240,8 @@ export function createPatchFunction (backend) {
       // in that case we can just return the element and be done.
       if (isDef(vnode.componentInstance)) {
         initComponent(vnode, insertedVnodeQueue)
+        // 在完成组件的整个 patch 过程后，最后执行 insert(parentElm, vnode.elm, refElm) 完成组件的 DOM 插入
+        // 如果组件 patch 过程中又创建了子组件，那么DOM 的插入顺序是先子后父。
         insert(parentElm, vnode.elm, refElm)
         if (isTrue(isReactivated)) {
           reactivateComponent(vnode, insertedVnodeQueue, parentElm, refElm)
@@ -592,6 +603,9 @@ export function createPatchFunction (backend) {
     }
   }
 
+  /**
+   * 把 insertedVnodeQueue 里面保存的钩子函数依次执行一遍
+   */
   function invokeInsertHook (vnode, queue, initial) {
     // delay insert hooks for component root nodes, invoke them after the
     // element is really inserted
@@ -599,6 +613,7 @@ export function createPatchFunction (backend) {
       vnode.parent.data.pendingInsert = queue
     } else {
       for (let i = 0; i < queue.length; ++i) {
+        // src/core/vdom/create-component.js
         queue[i].data.hook.insert(queue[i])
       }
     }

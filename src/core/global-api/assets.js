@@ -19,13 +19,16 @@ export function initAssetRegisters (Vue: GlobalAPI) {
         if (process.env.NODE_ENV !== 'production' && type === 'component') {
           validateComponentName(id)
         }
+        // type 是 component 且 definition 是一个对象的话
         if (type === 'component' && isPlainObject(definition)) {
           definition.name = definition.name || id
+          // 相当于 Vue.extend 把这个对象转换成一个继承于 Vue 的构造函数
           definition = this.options._base.extend(definition)
         }
         if (type === 'directive' && typeof definition === 'function') {
           definition = { bind: definition, update: definition }
         }
+        // 将它挂载到 Vue.options.components
         this.options[type + 's'][id] = definition
         return definition
       }

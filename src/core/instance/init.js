@@ -33,9 +33,14 @@ export function initMixin (Vue: Class<Component>) {
       // optimize internal component instantiation
       // since dynamic options merging is pretty slow, and none of the
       // internal component options needs special treatment.
+      // 渲染组件的时候会走到这个流程
       initInternalComponent(vm, options)
     } else {
+      // 外部调用场景
       // 合并配置
+      // 将 Vue 上的一些 option 拓展到了 vm.$options 上
+      // src/core/global-api/index.js
+      // 定义 src/core/util/options.js
       vm.$options = mergeOptions(
         resolveConstructorOptions(vm.constructor),
         options || {},
@@ -54,8 +59,10 @@ export function initMixin (Vue: Class<Component>) {
     initLifecycle(vm)
     initEvents(vm)
     initRender(vm)
+    // beforeCreate 和
     callHook(vm, 'beforeCreate')
     initInjections(vm) // resolve injections before data/props
+    // 初始化 props、data、methods、watch、computed 等属性
     initState(vm)
     initProvide(vm) // resolve provide after data/props
     callHook(vm, 'created')
@@ -77,7 +84,8 @@ export function initMixin (Vue: Class<Component>) {
 
 export function initInternalComponent (vm: Component, options: InternalComponentOptions) {
   const opts = vm.$options = Object.create(vm.constructor.options)
-  // doing this because it's faster than dynamic enumeration.
+  // 这样做是因为它比动态枚举更快。
+  // 将 createComponentInstanceForVnode 函数传入了几个参数合并到内部的选项 $option 里
   const parentVnode = options._parentVnode
   opts.parent = options.parent
   opts._parentVnode = parentVnode

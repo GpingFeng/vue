@@ -334,6 +334,7 @@ export function looseIndexOf (arr: Array<mixed>, val: mixed): number {
  */
 export function once (fn: Function): Function {
   let called = false
+  // 使用闭包和标志符保证函数只执行一次
   return function () {
     if (!called) {
       called = true

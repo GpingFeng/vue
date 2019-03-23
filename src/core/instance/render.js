@@ -63,6 +63,7 @@ export function renderMixin (Vue: Class<Component>) {
 
   Vue.prototype._render = function (): VNode {
     const vm: Component = this
+    // _parentVnode 为当前组件父 Vnode,而 render 函数生成的 vnode 当前组件的渲染 vnode
     const { render, _parentVnode } = vm.$options
 
     if (_parentVnode) {

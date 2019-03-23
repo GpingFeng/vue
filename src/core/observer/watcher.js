@@ -49,10 +49,13 @@ export default class Watcher {
     options?: ?Object,
     isRenderWatcher?: boolean
   ) {
+    // isRenderWatcher 为 true 的时候，把当前的 watcher 的实例赋值给 vm._watcher
     this.vm = vm
     if (isRenderWatcher) {
       vm._watcher = this
     }
+    // 同时会将 watcher 实例 push 到 vm._watchers 中
+    // vm._watcher 是专门用来监听 vm 上数据变化然后重新渲染的
     vm._watchers.push(this)
     // options
     if (options) {

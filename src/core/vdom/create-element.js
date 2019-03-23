@@ -107,19 +107,24 @@ export function _createElement (
   if (typeof tag === 'string') {
     let Ctor
     ns = (context.$vnode && context.$vnode.ns) || config.getTagNamespace(tag)
+    // 如果是一个普通的 html 标签，像上一章的例子那样是一个普通的 div，则会实例化一个普通 VNode 节点
     if (config.isReservedTag(tag)) {
       // platform built-in elements
       vnode = new VNode(
         config.parsePlatformTagName(tag), data, children,
         undefined, undefined, context
       )
+      // 否则通过 createComponent 方法创建一个虚拟 DOM 
+      // src/core/vdom/create-component.js
+      // resolveAsset 的定义 src/core/utils/options.js
+      // resolveAsset 拿到这个组件的构造函数，并作为 createComponent 的钩子的参数
     } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
       // component
       vnode = createComponent(Ctor, data, context, children, tag)
     } else {
-      // unknown or unlisted namespaced elements
-      // check at runtime because it may get assigned a namespace when its
-      // parent normalizes children
+      // 未知或未列出的命名空间元素
+      // 在运行时检查，因为它可能会被赋予命名空间
+      // 父母将孩子规范化
       vnode = new VNode(
         tag, data, children,
         undefined, undefined, context

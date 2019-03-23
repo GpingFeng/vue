@@ -33,6 +33,7 @@ import {
 } from 'weex/runtime/recycle-list/render-component-template'
 
 // inline hooks to be invoked on component VNodes during patch
+// 在 patch 流程中对外暴露了各种时机的钩子函数
 const componentVNodeHooks = {
   init (vnode: VNodeWithData, hydrating: boolean): ?boolean {
     if (
@@ -44,6 +45,7 @@ const componentVNodeHooks = {
       const mountedNode: any = vnode // work around flow
       componentVNodeHooks.prepatch(mountedNode, mountedNode)
     } else {
+      // 创建一个 Vue 实例，然后调用 $mount 方法挂载子组件
       const child = vnode.componentInstance = createComponentInstanceForVnode(
         vnode,
         activeInstance
@@ -68,6 +70,7 @@ const componentVNodeHooks = {
     const { context, componentInstance } = vnode
     if (!componentInstance._isMounted) {
       componentInstance._isMounted = true
+      // 每个子组件都是在这个钩子函数中执行 mouted 钩子函数
       callHook(componentInstance, 'mounted')
     }
     if (vnode.data.keepAlive) {
@@ -111,12 +114,13 @@ export function createComponent (
 
   const baseCtor = context.$options._base
 
-  // plain options object: turn it into a constructor
+  // 普通选项对象：将其转换为构造函数
+  // src/core/global-api/index.js
   if (isObject(Ctor)) {
     Ctor = baseCtor.extend(Ctor)
   }
 
-  // if at this stage it's not a constructor or an async component factory,
+  // 如果在这个阶段它不是构造函数或异步组件工厂，
   // reject.
   if (typeof Ctor !== 'function') {
     if (process.env.NODE_ENV !== 'production') {
@@ -127,13 +131,20 @@ export function createComponent (
 
   // async component
   let asyncFactory
+  // Ctor 这个时候是一个函数，因此它的 cid 是 undefined
   if (isUndef(Ctor.cid)) {
     asyncFactory = Ctor
+    // src/core/vdom/helpers/resolve-async-component.js
     Ctor = resolveAsyncComponent(asyncFactory, baseCtor, context)
     if (Ctor === undefined) {
       // return a placeholder node for async component, which is rendered
       // as a comment node but preserves all the raw information for the node.
       // the information will be used for async server-rendering and hydration.
+      // 返回呈现的异步组件的占位符节点
+      // 作为注释节点，但保留节点的所有原始信息。
+      // 该信息将用于异步服务器渲染和水合。
+      
+      // 接着通过 createAsyncPlaceholder 创建一个注释节点作为占位符
       return createAsyncPlaceholder(
         asyncFactory,
         data,
@@ -148,6 +159,8 @@ export function createComponent (
 
   // resolve constructor options in case global mixins are applied after
   // component constructor creation
+  // 解决构造函数选项，以防以后应用全局混合
+  // 组件构造函数创建
   resolveConstructorOptions(Ctor)
 
   // transform component v-model data into props & events
@@ -183,9 +196,11 @@ export function createComponent (
   }
 
   // install component management hooks onto the placeholder node
+  // 安装组件钩子函数
   installComponentHooks(data)
 
   // return a placeholder vnode
+  // 实例化 vnode, 注意：组件的 vnode 是没有 children 的
   const name = Ctor.options.name || tag
   const vnode = new VNode(
     `vue-component-${Ctor.cid}${name ? `-${name}` : ''}`,
@@ -210,9 +225,9 @@ export function createComponentInstanceForVnode (
   parent: any, // activeInstance in lifecycle state
 ): Component {
   const options: InternalComponentOptions = {
-    _isComponent: true,
-    _parentVnode: vnode,
-    parent
+    _isComponent: true, // 是一个组件
+    _parentVnode: vnode,  
+    parent // parent 表示当前激活的组件实例
   }
   // check inline-template render functions
   const inlineTemplate = vnode.data.inlineTemplate
@@ -220,9 +235,14 @@ export function createComponentInstanceForVnode (
     options.render = inlineTemplate.render
     options.staticRenderFns = inlineTemplate.staticRenderFns
   }
+  // vnode.componentOptions.Ctor 对应的就是子组件的构造函数  Vue.extend 的返回值 Sub
+  // src/core/instance/init.js
   return new vnode.componentOptions.Ctor(options)
 }
 
+/**
+ * 把 componentVNodeHooks 的钩子函数合并到 data.hook 中
+ */
 function installComponentHooks (data: VNodeData) {
   const hooks = data.hook || (data.hook = {})
   for (let i = 0; i < hooksToMerge.length; i++) {
@@ -238,6 +258,7 @@ function installComponentHooks (data: VNodeData) {
 function mergeHook (f1: any, f2: any): Function {
   const merged = (a, b) => {
     // flow complains about extra args which is why we use any
+    // 流量抱怨额外的args，这就是我们使用any的原因
     f1(a, b)
     f2(a, b)
   }

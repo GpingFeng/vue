@@ -15,6 +15,9 @@ export function initExtend (Vue: GlobalAPI) {
 
   /**
    * Class inheritance
+   * Vue.extend 的定义
+   * 构造一个 Vue 的子类
+   * extendOptions 对应的就是前面定义的组件对象
    */
   Vue.extend = function (extendOptions: Object): Function {
     extendOptions = extendOptions || {}
@@ -30,12 +33,16 @@ export function initExtend (Vue: GlobalAPI) {
       validateComponentName(name)
     }
 
+    // 当我们实例化 Sub 的时候，就会执行 this._init 逻辑再次走到 Vue 实例的初始化逻辑
     const Sub = function VueComponent (options) {
       this._init(options)
     }
+    // 原型继承
     Sub.prototype = Object.create(Super.prototype)
     Sub.prototype.constructor = Sub
     Sub.cid = cid++
+    // 拓展了一些属性
+    // 这里的 extendOptions 对应的就是前面定义的组件对象，它会和 Vue.options 合并到 Sub.opitons 中
     Sub.options = mergeOptions(
       Super.options,
       extendOptions
@@ -45,6 +52,9 @@ export function initExtend (Vue: GlobalAPI) {
     // For props and computed properties, we define the proxy getters on
     // the Vue instances at extension time, on the extended prototype. This
     // avoids Object.defineProperty calls for each instance created.
+    // 对于props和computed属性，我们定义了代理getter
+    // 扩展时的Vue实例，在扩展原型上。
+    // 避免对每个创建的实例调用Object.defineProperty。
     if (Sub.options.props) {
       initProps(Sub)
     }
@@ -70,6 +80,9 @@ export function initExtend (Vue: GlobalAPI) {
     // keep a reference to the super options at extension time.
     // later at instantiation we can check if Super's options have
     // been updated.
+    // 在扩展时保留对超级选项的引用。
+    // 稍后在实例化时我们可以检查Super的选项是否有
+    // 已更新。
     Sub.superOptions = Super.options
     Sub.extendOptions = extendOptions
     Sub.sealedOptions = extend({}, Sub.options)

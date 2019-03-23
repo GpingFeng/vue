@@ -142,6 +142,7 @@ strats.data = function (
 
 /**
  * Hooks and props are merged as arrays.
+ * 生命周期函数 合并策略
  */
 function mergeHook (
   parentVal: ?Array<Function>,
@@ -169,6 +170,7 @@ function dedupeHooks (hooks) {
   return res
 }
 
+// src/shared/constants.js
 LIFECYCLE_HOOKS.forEach(hook => {
   strats[hook] = mergeHook
 })
@@ -407,6 +409,7 @@ export function mergeOptions (
   // the result of another mergeOptions call.
   // Only merged options has the _base property.
   if (!child._base) {
+    // 递归将 extends 和 mixins 合并到 parent 上
     if (child.extends) {
       parent = mergeOptions(parent, child.extends, vm)
     }
@@ -449,12 +452,16 @@ export function resolveAsset (
   if (typeof id !== 'string') {
     return
   }
+  // 说明了我们在使用 Vue.component(id, definition) 全局注册组件的时候，id 可以是连字符、驼峰或首字母大写的形式
   const assets = options[type]
   // check local registration variations first
+  // 直接根据 id 拿取
   if (hasOwn(assets, id)) return assets[id]
   const camelizedId = camelize(id)
+  // 使用驼峰的方式拿取
   if (hasOwn(assets, camelizedId)) return assets[camelizedId]
   const PascalCaseId = capitalize(camelizedId)
+  // 如果仍然不存在则在驼峰的基础上把首字母再变成大写的形式再拿
   if (hasOwn(assets, PascalCaseId)) return assets[PascalCaseId]
   // fallback to prototype chain
   const res = assets[id] || assets[camelizedId] || assets[PascalCaseId]

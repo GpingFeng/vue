@@ -13,6 +13,9 @@ import {
 
 import { createEmptyVNode } from 'core/vdom/vnode'
 
+/**
+ * 为了保证能找到异步组件 JS 定义的组件对象
+ */
 function ensureCtor (comp: any, base) {
   if (
     comp.__esModule ||
@@ -25,6 +28,10 @@ function ensureCtor (comp: any, base) {
     : comp
 }
 
+/**
+ * 实际上就是就是创建了一个占位的注释 VNode
+ * 同时把 asyncFactory 和 asyncMeta 赋值给当前 vnode
+ */
 export function createAsyncPlaceholder (
   factory: Function,
   data: ?VNodeData,
@@ -38,6 +45,9 @@ export function createAsyncPlaceholder (
   return node
 }
 
+/**
+ * 实际上处理了 3 种异步组件的创建方式
+ */
 export function resolveAsyncComponent (
   factory: Function,
   baseCtor: Class<Component>,
@@ -64,6 +74,7 @@ export function resolveAsyncComponent (
 
     const forceRender = (renderCompleted: boolean) => {
       for (let i = 0, l = contexts.length; i < l; i++) {
+        // src/core/instance/lifecycle.js
         contexts[i].$forceUpdate()
       }
 
@@ -78,6 +89,7 @@ export function resolveAsyncComponent (
       // invoke callbacks only if this is not a synchronous resolve
       // (async resolves are shimmed as synchronous during SSR)
       if (!sync) {
+        // src/core/instance/lifecycle.js
         forceRender(true)
       } else {
         contexts.length = 0
@@ -95,6 +107,9 @@ export function resolveAsyncComponent (
       }
     })
 
+    // 执行我们组件的工厂函数
+    // 组件的工厂函数一般会先发请求去加载我们的异步组件 JS 文件
+    // 拿到组件定义的对象 res 后，执行 resolve(res) 逻辑
     const res = factory(resolve, reject)
 
     if (isObject(res)) {
