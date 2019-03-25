@@ -10,6 +10,7 @@ export function createCompilerCreator (baseCompile: Function): Function {
       template: string,
       options?: CompilerOptions
     ): CompiledResult {
+      // 先处理相关的配置参数信息
       const finalOptions = Object.create(baseOptions)
       const errors = []
       const tips = []
@@ -57,7 +58,7 @@ export function createCompilerCreator (baseCompile: Function): Function {
       }
 
       finalOptions.warn = warn
-
+      // 执行编译过程
       const compiled = baseCompile(template.trim(), finalOptions)
       if (process.env.NODE_ENV !== 'production') {
         detectErrors(compiled.ast, warn)
@@ -69,6 +70,7 @@ export function createCompilerCreator (baseCompile: Function): Function {
 
     return {
       compile,
+      // 对应 $mount 函数中调用的 compileToFunctions 方法
       compileToFunctions: createCompileToFunctionFn(compile)
     }
   }
