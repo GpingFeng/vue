@@ -92,6 +92,8 @@ export function lifecycleMixin (Vue: Class<Component>) {
       vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
     } else {
       // updates
+      // 组件更新的时候，还是调用 patch 函数
+      // src/core/vdom/patch.js
       vm.$el = vm.__patch__(prevVnode, vnode)
     }
     restoreActiveInstance()
@@ -253,6 +255,9 @@ export function mountComponent (
   return vm
 }
 
+/**
+ * 更新 VNode
+ */
 export function updateChildComponent (
   vm: Component,
   propsData: ?Object,

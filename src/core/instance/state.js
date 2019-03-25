@@ -35,6 +35,9 @@ const sharedPropertyDefinition = {
   set: noop
 }
 
+/**
+ * 通过 Object.defineProperty 把 target[sourceKey][key] 的读写变成了对 target[key] 的读写
+ */
 export function proxy (target: Object, sourceKey: string, key: string) {
   sharedPropertyDefinition.get = function proxyGetter () {
     return this[sourceKey][key]
@@ -45,6 +48,9 @@ export function proxy (target: Object, sourceKey: string, key: string) {
   Object.defineProperty(target, key, sharedPropertyDefinition)
 }
 
+/**
+ * Vue 初始化阶段，会执行 initState
+ */
 export function initState (vm: Component) {
   vm._watchers = []
   const opts = vm.$options
@@ -55,7 +61,9 @@ export function initState (vm: Component) {
   } else {
     observe(vm._data = {}, true /* asRootData */)
   }
+  // 初始化计算属性
   if (opts.computed) initComputed(vm, opts.computed)
+  // 初始化 watch
   if (opts.watch && opts.watch !== nativeWatch) {
     initWatch(vm, opts.watch)
   }
@@ -72,6 +80,7 @@ function initProps (vm: Component, propsOptions: Object) {
   if (!isRoot) {
     toggleObserving(false)
   }
+  // 遍历定义的 props 配置
   for (const key in propsOptions) {
     keys.push(key)
     const value = validateProp(key, propsOptions, propsData, vm)
@@ -85,6 +94,10 @@ function initProps (vm: Component, propsOptions: Object) {
           vm
         )
       }
+      /**
+       * defineReactive 方法把每个 prop 对应的值变成响应式
+       * 可以通过 vm._props.xxx 访问到定义的 props 中对应的属性
+       */
       defineReactive(props, key, value, () => {
         if (!isRoot && !isUpdatingChildComponent) {
           warn(
@@ -102,12 +115,16 @@ function initProps (vm: Component, propsOptions: Object) {
     // static props are already proxied on the component's prototype
     // during Vue.extend(). We only need to proxy props defined at
     // instantiation here.
+    /**
+     * 通过 proxy 将 vm._props.xxx 代理到 vm.xxx 上
+     */
     if (!(key in vm)) {
       proxy(vm, `_props`, key)
     }
   }
   toggleObserving(true)
 }
+
 
 function initData (vm: Component) {
   let data = vm.$options.data
@@ -144,10 +161,15 @@ function initData (vm: Component) {
         vm
       )
     } else if (!isReserved(key)) {
+      // 通过 proxy 把每一个值 vm._data.xxx 都代理到 vm.xxx
       proxy(vm, `_data`, key)
     }
   }
   // observe data
+  /**
+   * 调用 observe 方法观测整个 data 的变化，把 data 也变成响应式
+   * 可以通过 vm._data.xxx 访问到定义 data 返回函数中对应的属性
+   */
   observe(data, true /* asRootData */)
 }
 
@@ -168,12 +190,15 @@ const computedWatcherOptions = { lazy: true }
 
 function initComputed (vm: Component, computed: Object) {
   // $flow-disable-line
+  // 先创建一个空对象
   const watchers = vm._computedWatchers = Object.create(null)
   // computed properties are just getters during SSR
   const isSSR = isServerRendering()
 
   for (const key in computed) {
+    // 拿到计算属性的每一个 userDef
     const userDef = computed[key]
+    // 然后尝试拿这个计算属性对应的 getter 函数
     const getter = typeof userDef === 'function' ? userDef : userDef.get
     if (process.env.NODE_ENV !== 'production' && getter == null) {
       warn(
@@ -184,6 +209,10 @@ function initComputed (vm: Component, computed: Object) {
 
     if (!isSSR) {
       // create internal watcher for the computed property.
+      // 为每一个 getter 创建一个 watcher
+      // 这个 watcher 和渲染 watcher 有一点很大的不同
+      // 它是一个 computed watcher，因为 
+      // const computedWatcherOptions = { computed: true }
       watchers[key] = new Watcher(
         vm,
         getter || noop,
@@ -195,8 +224,11 @@ function initComputed (vm: Component, computed: Object) {
     // component-defined computed properties are already defined on the
     // component prototype. We only need to define computed properties defined
     // at instantiation here.
+    // 如果 key 不是 vm 的属性，则调用 defineComputed(vm, key, userDef)
     if (!(key in vm)) {
       defineComputed(vm, key, userDef)
+      // 否则判断计算属性对于的 key 是否已经被 data 或者 prop 所占用
+      // 如果是的话则在开发环境报相应的警告
     } else if (process.env.NODE_ENV !== 'production') {
       if (key in vm.$data) {
         warn(`The computed property "${key}" is already defined in data.`, vm)
@@ -207,6 +239,11 @@ function initComputed (vm: Component, computed: Object) {
   }
 }
 
+/**
+ * 利用 Object.defineProperty 给计算属性对应的 key 值添加 getter 和 setter
+ * setter 通常是计算属性是一个对象
+ * 并且拥有 set 方法的时候才有，否则是一个空函数
+ */
 export function defineComputed (
   target: any,
   key: string,
@@ -239,6 +276,7 @@ export function defineComputed (
 }
 
 function createComputedGetter (key) {
+  // 计算属性对应的 getter。
   return function computedGetter () {
     const watcher = this._computedWatchers && this._computedWatchers[key]
     if (watcher) {
@@ -290,6 +328,9 @@ function initMethods (vm: Component, methods: Object) {
 function initWatch (vm: Component, watch: Object) {
   for (const key in watch) {
     const handler = watch[key]
+    // Vue 是支持 watch 的同一个 key 对应多个 handler
+    // 所以如果 handler 是一个数组，则遍历这个数组
+    // 调用 createWatcher 方法，否则直接调用 createWatcher
     if (Array.isArray(handler)) {
       for (let i = 0; i < handler.length; i++) {
         createWatcher(vm, key, handler[i])
@@ -306,6 +347,7 @@ function createWatcher (
   handler: any,
   options?: Object
 ) {
+  // 首先对 hanlder 的类型做判断，拿到它最终的回调函数
   if (isPlainObject(handler)) {
     options = handler
     handler = handler.handler
@@ -313,6 +355,7 @@ function createWatcher (
   if (typeof handler === 'string') {
     handler = vm[handler]
   }
+  // 调用 vm.$watch(keyOrFn, handler, options) 函数
   return vm.$watch(expOrFn, handler, options)
 }
 
@@ -341,7 +384,8 @@ export function stateMixin (Vue: Class<Component>) {
 
   Vue.prototype.$set = set
   Vue.prototype.$delete = del
-
+  
+  // 因为 $watch 方法是用户可以直接调用的，它可以传递一个对象，也可以传递函数
   Vue.prototype.$watch = function (
     expOrFn: string | Function,
     cb: any,
@@ -353,6 +397,7 @@ export function stateMixin (Vue: Class<Component>) {
     }
     options = options || {}
     options.user = true
+    // 实例化了一个 watcher，这里需要注意一点这是一个 user watcher
     const watcher = new Watcher(vm, expOrFn, cb, options)
     if (options.immediate) {
       try {

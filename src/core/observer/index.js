@@ -34,6 +34,10 @@ export function toggleObserving (value: boolean) {
  * object's property keys into getter/setters that
  * collect dependencies and dispatch updates.
  */
+/**
+ * 给对象的属性添加 getter 和 setter
+ * 用于依赖收集和派发更新
+ */
 export class Observer {
   value: any;
   dep: Dep;
@@ -41,10 +45,13 @@ export class Observer {
 
   constructor (value: any) {
     this.value = value
+    // src/core/util/lang.js
     this.dep = new Dep()
     this.vmCount = 0
+    // data 上的对象类型的数据，会有一个 __ob__ 的属性
     def(value, '__ob__', this)
     if (Array.isArray(value)) {
+      // hasProto 实际上就是判断对象中是否存在 __proto__
       if (hasProto) {
         protoAugment(value, arrayMethods)
       } else {
@@ -84,6 +91,9 @@ export class Observer {
  * Augment a target Object or Array by intercepting
  * the prototype chain using __proto__
  */
+/**
+ * target.__proto__ 原型直接修改为 src
+ */
 function protoAugment (target, src: Object) {
   /* eslint-disable no-proto */
   target.__proto__ = src
@@ -95,6 +105,10 @@ function protoAugment (target, src: Object) {
  * hidden properties.
  */
 /* istanbul ignore next */
+/**
+ * copyAugment 方法是遍历 keys，通过 def
+ * 也就是 Object.defineProperty 去定义它自身的属性值
+ */
 function copyAugment (target: Object, src: Object, keys: Array<string>) {
   for (let i = 0, l = keys.length; i < l; i++) {
     const key = keys[i]
@@ -106,12 +120,20 @@ function copyAugment (target: Object, src: Object, keys: Array<string>) {
  * Attempt to create an observer instance for a value,
  * returns the new observer if successfully observed,
  * or the existing observer if the value already has one.
+ *  尝试为值创建观察者实例,
+ * 如果成功观察，则返回新的观察者,
+ * 或者现有的观察者，如果价值已经有一个.
+ */
+/**
+ * observe 用来监听数据的变化
  */
 export function observe (value: any, asRootData: ?boolean): Observer | void {
+  // 非 VNode 对象
   if (!isObject(value) || value instanceof VNode) {
     return
   }
   let ob: Observer | void
+  // 如果已经添加过，则直接返回
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__
   } else if (
@@ -121,6 +143,7 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
     Object.isExtensible(value) &&
     !value._isVue
   ) {
+    // 实例化一个 Observer 对象
     ob = new Observer(value)
   }
   if (asRootData && ob) {
@@ -131,6 +154,7 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
 
 /**
  * Define a reactive property on an Object.
+ * 定义一个响应式的对象，给对象添加 getter 和 setter
  */
 export function defineReactive (
   obj: Object,
@@ -139,8 +163,9 @@ export function defineReactive (
   customSetter?: ?Function,
   shallow?: boolean
 ) {
+  // 实例化 Dep
   const dep = new Dep()
-
+  // 拿到 Object 的属性描述符
   const property = Object.getOwnPropertyDescriptor(obj, key)
   if (property && property.configurable === false) {
     return
@@ -152,7 +177,8 @@ export function defineReactive (
   if ((!getter || setter) && arguments.length === 2) {
     val = obj[key]
   }
-
+  
+  // 对子对象递归调用 observe 方法
   let childOb = !shallow && observe(val)
   Object.defineProperty(obj, key, {
     enumerable: true,
@@ -187,7 +213,9 @@ export function defineReactive (
       } else {
         val = newVal
       }
+      // 会对新设置的值变成一个响应式对象
       childOb = !shallow && observe(newVal)
+      // 通知所有的订阅者
       dep.notify()
     }
   })
@@ -213,6 +241,12 @@ export function set (target: Array<any> | Object, key: any, val: any): any {
     target[key] = val
     return val
   }
+  /**
+   * 获取到 target.__ob__ 并赋值给 ob
+   * 之前分析过它是在 Observer 的构造函数执行的时候初始化的
+   * 表示 Observer 的一个实例，如果它不存在
+   * 则说明 target 不是一个响应式的对象，则直接赋值并返回
+   */
   const ob = (target: any).__ob__
   if (target._isVue || (ob && ob.vmCount)) {
     process.env.NODE_ENV !== 'production' && warn(
@@ -225,7 +259,9 @@ export function set (target: Array<any> | Object, key: any, val: any): any {
     target[key] = val
     return val
   }
+  // defineReactive(ob.value, key, val) 把新添加的属性变成响应式对象
   defineReactive(ob.value, key, val)
+  // 然后再通过 ob.dep.notify() 手动的触发依赖通知
   ob.dep.notify()
   return val
 }

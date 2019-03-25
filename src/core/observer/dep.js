@@ -9,9 +9,11 @@ let uid = 0
 /**
  * A dep is an observable that can have multiple
  * directives subscribing to it.
+ * Dep 是整个依赖收集的核心
+ * Dep 实际上就是对 Watcher 的一种管理
  */
 export default class Dep {
-  static target: ?Watcher;
+  static target: ?Watcher;  // 唯一的一个全局的 Watcher
   id: number;
   subs: Array<Watcher>;
 
@@ -43,6 +45,7 @@ export default class Dep {
       // order
       subs.sort((a, b) => a.id - b.id)
     }
+    // 调用每一个 watch 的 update 方法
     for (let i = 0, l = subs.length; i < l; i++) {
       subs[i].update()
     }
@@ -61,6 +64,8 @@ export function pushTarget (target: ?Watcher) {
 }
 
 export function popTarget () {
+  // Dep.target 恢复成上一个状态
+  // 因为当前 vm 的数据依赖收集已经完成，那么对应的渲染Dep.target 也需要改变
   targetStack.pop()
   Dep.target = targetStack[targetStack.length - 1]
 }

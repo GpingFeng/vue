@@ -54,6 +54,9 @@ const componentVNodeHooks = {
     }
   },
 
+  // prepatch 方法就是拿到新的 vnode 的组件配置以及组件实例
+  // 去执行 updateChildComponent 方法
+  // 它的定义在 src/core/instance/lifecycle.js 中：
   prepatch (oldVnode: MountedComponentVNode, vnode: MountedComponentVNode) {
     const options = vnode.componentOptions
     const child = vnode.componentInstance = oldVnode.componentInstance
@@ -91,6 +94,7 @@ const componentVNodeHooks = {
     const { componentInstance } = vnode
     if (!componentInstance._isDestroyed) {
       if (!vnode.data.keepAlive) {
+        // 当组件并不是 keepAlive 的时候
         componentInstance.$destroy()
       } else {
         deactivateChildComponent(componentInstance, true /* direct */)

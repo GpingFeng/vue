@@ -9,6 +9,9 @@ const callbacks = []
 let pending = false
 
 function flushCallbacks () {
+  /**
+   * flushCallbacks 的逻辑非常简单，对 callbacks 遍历，然后执行相应的回调函数
+   */
   pending = false
   const copies = callbacks.slice(0)
   callbacks.length = 0
@@ -37,6 +40,9 @@ let timerFunc
 // completely stops working after triggering a few times... so, if native
 // Promise is available, we will use it:
 /* istanbul ignore next, $flow-disable-line */
+/**
+ * 先检测是否支持 Promise
+ */
 if (typeof Promise !== 'undefined' && isNative(Promise)) {
   const p = Promise.resolve()
   timerFunc = () => {
@@ -48,6 +54,9 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
     // "force" the microtask queue to be flushed by adding an empty timer.
     if (isIOS) setTimeout(noop)
   }
+  /**
+   * 检测是否支持 MutationObserver
+   */
 } else if (!isIE && typeof MutationObserver !== 'undefined' && (
   isNative(MutationObserver) ||
   // PhantomJS and iOS 7.x
@@ -66,6 +75,9 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
     counter = (counter + 1) % 2
     textNode.data = String(counter)
   }
+  /**
+   * 检测是否支持 setImmediate
+   */
 } else if (typeof setImmediate !== 'undefined' && isNative(setImmediate)) {
   // Fallback to setImmediate.
   // Techinically it leverages the (macro) task queue,
@@ -74,12 +86,18 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
     setImmediate(flushCallbacks)
   }
 } else {
+  /**
+   * 降级为 setTimeout
+   */
   // Fallback to setTimeout.
   timerFunc = () => {
     setTimeout(flushCallbacks, 0)
   }
 }
 
+/**
+ * 把传入的回调函数 cb 压入 callbacks 数组
+ */
 export function nextTick (cb?: Function, ctx?: Object) {
   let _resolve
   callbacks.push(() => {
@@ -98,6 +116,9 @@ export function nextTick (cb?: Function, ctx?: Object) {
     timerFunc()
   }
   // $flow-disable-line
+  /**
+   * 当 nextTick 不传 cb 参数的时候，提供一个 Promise 化的调用
+   */
   if (!cb && typeof Promise !== 'undefined') {
     return new Promise(resolve => {
       _resolve = resolve
