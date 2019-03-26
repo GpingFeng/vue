@@ -18,13 +18,18 @@ const genStaticKeysCached = cached(genStaticKeys)
  *    create fresh nodes for them on each re-render;
  * 2. Completely skip them in the patching process.
  */
+/**
+ * 把一些 AST 节点优化成静态节点
+ */
 export function optimize (root: ?ASTElement, options: CompilerOptions) {
   if (!root) return
   isStaticKey = genStaticKeysCached(options.staticKeys || '')
   isPlatformReservedTag = options.isReservedTag || no
   // first pass: mark all non-static nodes.
+  // 标记静态节点
   markStatic(root)
   // second pass: mark static roots.
+  // 标记静态根
   markStaticRoots(root, false)
 }
 
@@ -48,6 +53,7 @@ function markStatic (node: ASTNode) {
     ) {
       return
     }
+    // 普通元素，遍历它的所有 children，递归执行 markStatic
     for (let i = 0, l = node.children.length; i < l; i++) {
       const child = node.children[i]
       markStatic(child)
@@ -55,6 +61,7 @@ function markStatic (node: ASTNode) {
         node.static = false
       }
     }
+    // if elseif else 不在 children 中
     if (node.ifConditions) {
       for (let i = 1, l = node.ifConditions.length; i < l; i++) {
         const block = node.ifConditions[i].block
@@ -69,12 +76,15 @@ function markStatic (node: ASTNode) {
 
 function markStaticRoots (node: ASTNode, isInFor: boolean) {
   if (node.type === 1) {
+    // 已经是 static 的节点或者是 v-once 指令的节点，node.staticInFor = isInFor
     if (node.static || node.once) {
       node.staticInFor = isInFor
     }
     // For a node to qualify as a static root, it should have children that
     // are not just static text. Otherwise the cost of hoisting out will
     // outweigh the benefits and it's better off to just always render it fresh.
+    // 除了本身是一个静态节点外，必须满足拥有 children
+    // 并且 children 不能只是一个文本节点，不然的话把它标记成静态根节点的收益就很小了
     if (node.static && node.children.length && !(
       node.children.length === 1 &&
       node.children[0].type === 3
@@ -97,6 +107,9 @@ function markStaticRoots (node: ASTNode, isInFor: boolean) {
   }
 }
 
+/**
+ * 对一个 AST 元素节点是否为静态的判断
+ */
 function isStatic (node: ASTNode): boolean {
   if (node.type === 2) { // expression
     return false
@@ -104,6 +117,15 @@ function isStatic (node: ASTNode): boolean {
   if (node.type === 3) { // text
     return true
   }
+  /**
+   * 如果有 pre 属性，那么它使用了 v-pre 指令，是静态
+   * 否则要同时满足以下条件：
+   * 没有使用 v-if、v-for，没有使用其它指令（不包括 v-once）
+   * 非内置组件，是平台保留的标签
+   * 非带有 v-for 的 template 标签的直接子节点
+   * 节点的所有属性的 key 都满足静态 key
+   * 这些都满足则这个 AST 节点是一个静态节点
+   */
   return !!(node.pre || (
     !node.hasBindings && // no dynamic bindings
     !node.if && !node.for && // not v-if or v-for or v-else

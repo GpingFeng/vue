@@ -24,6 +24,7 @@ export class CodegenState {
     this.options = options
     this.warn = options.warn || baseWarn
     this.transforms = pluckModuleFunction(options.modules, 'transformCode')
+    // 实际上就是获取所有的 modules 中的 genData 函数
     this.dataGenFns = pluckModuleFunction(options.modules, 'genData')
     this.directives = extend(extend({}, baseDirectives), options.directives)
     const isReservedTag = options.isReservedTag || no
@@ -44,6 +45,7 @@ export function generate (
   options: CompilerOptions
 ): CodegenResult {
   const state = new CodegenState(options)
+  // genElement 生成 code，state 是 CodegenState 的一个实例
   const code = ast ? genElement(ast, state) : '_c("div")'
   return {
     render: `with(this){return ${code}}`,
@@ -164,6 +166,7 @@ function genIfConditions (
   const condition = conditions.shift()
   if (condition.exp) {
     return `(${condition.exp})?${
+      // : 后是递归调用 genIfConditions，这样如果有多个 conditions，就生成多层三元运算逻辑
       genTernaryExp(condition.block)
     }:${
       genIfConditions(conditions, state, altGen, altEmpty)
@@ -215,6 +218,9 @@ export function genFor (
     '})'
 }
 
+/**
+ * 根据 AST 元素节点的属性构造出一个 data 对象字符串，这个在后面创建 VNode 的时候的时候会作为参数传入
+ */
 export function genData (el: ASTElement, state: CodegenState): string {
   let data = '{'
 

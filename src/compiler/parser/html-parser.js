@@ -48,7 +48,9 @@ function decodeAttr (value, shouldDecodeNewlines) {
   const re = shouldDecodeNewlines ? encodedAttrWithNewLines : encodedAttr
   return value.replace(re, match => decodingMap[match])
 }
-
+/**
+ * 整体来说它的逻辑就是循环解析 template ，用正则做各种匹配，对于不同情况分别进行不同的处理，直到整个 template 被解析完毕
+ */
 export function parseHTML (html, options) {
   const stack = []
   const expectHTML = options.expectHTML
@@ -177,6 +179,9 @@ export function parseHTML (html, options) {
   // Clean up any remaining tags
   parseEndTag()
 
+  /**
+   * 不断前进整个模板字符串，直到字符串末尾
+   */
   function advance (n) {
     index += n
     html = html.substring(n)

@@ -69,13 +69,17 @@ export function createASTElement (
 
 /**
  * Convert HTML string to AST.
+ * 输入是 template 和 options，输出是 AST 的根节点。
+ * template 就是我们的模板字符串，而 options 实际上是和平台相关的一些配置
+ * src/platforms/web/compiler/options
  */
 export function parse (
   template: string,
   options: CompilerOptions
 ): ASTElement | void {
   warn = options.warn || baseWarn
-
+  // getFnsAndConfigFromOptions
+  // 从 options 中获取方法和配置
   platformIsPreTag = options.isPreTag || no
   platformMustUseProp = options.mustUseProp || no
   platformGetTagNamespace = options.getTagNamespace || no
